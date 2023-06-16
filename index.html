@@ -170,6 +170,434 @@
         }
 
 
+
+        
+
+        // After Login Get ad Account ID and user data in Meta_Ad_Accounts airtable table 
+function saveFacebookLogindata(id, email, name, adaccounts)
+{
+            var dd = adaccounts.data;
+           
+            // Save ad account IDs, page IDs, and page names to Airtable using fetch API
+            const accountIds = [];
+            for (let i = 0; i < dd.length; i++) {
+                accountIds.push(dd[i].account_id);
+            }
+
+            const apiKey = 'keyVDvhyVSx5Ntbl3';
+            const baseId = 'appmM1mMqcDvugXhY';
+            const tableName = 'Meta_Ad_Accounts';
+
+            const getadaccountdata = `https://api.airtable.com/v0/${baseId}/Meta_Ad_Accounts`;
+
+            fetch(getadaccountdata, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                  
+                    var adAccIds = data.records.map(obj => obj.fields.ad_acc_id);
+                 
+                    for (let i = 0; i < dd.length; i++) {
+                        const currentAccountId = dd[i].account_id;
+                        const existingIndex = adAccIds.indexOf(currentAccountId);
+
+                        if (existingIndex > -1) {
+                            // Ad account ID already exists, update the record
+                            const updateData = {
+                                fields: {
+                                    'meta_email': email,
+                                    'fb_id': id,
+                                    'name': name,
+                                    'access_token': $insertdata['access_token'],
+                                    'ad_acc_id': currentAccountId
+                                }
+                            };
+
+                            const updateUrl = `https://api.airtable.com/v0/${baseId}/Meta_Ad_Accounts/${data.records[existingIndex].id}`;
+
+                            fetch(updateUrl, {
+                                    method: 'PATCH',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${apiKey}`
+                                    },
+                                    body: JSON.stringify(updateData)
+                                })
+                                .then(response => response.json())
+                                .then(updatedRecord => {
+                                    // console.log('Record updated:', updatedRecord);
+                                })
+                                .catch(error => {
+                                    // console.error('Error updating record:', error);
+                                });
+                        } else {
+                            // Ad account ID doesn't exist, insert a new record
+                            const airtableUrl = `https://api.airtable.com/v0/${baseId}/Meta_Ad_Accounts`;
+
+                            const requestBody = {
+                                records: [{
+                                    fields: {
+                                        'meta_email': email,
+                                        'fb_id': id,
+                                        'name': name,
+                                        'access_token': $insertdata['access_token'],
+                                        'ad_acc_id': currentAccountId
+                                    }
+                                }]
+                            };
+
+                            fetch(airtableUrl, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${apiKey}`
+                                    },
+                                    body: JSON.stringify(requestBody)
+                                })
+                                .then(response => response.json())
+                                .then(insertRecord => {
+                                    // console.log('Record inserted:', insertRecord);
+                                })
+                                .catch(error => {
+                                    // console.error('Error inserting record:', error);
+                                });
+                        }
+                    }
+                })
+                .catch(error => {
+                    // console.error(error);
+                });
+}
+
+
+      //  Campaign Creation 
+        function create_campaigns() {
+
+            const apiKey = 'keyVDvhyVSx5Ntbl3';
+            const baseId = 'appmM1mMqcDvugXhY';
+
+      // Get table data for campaign creation 
+            const getcampaigndata = `https://api.airtable.com/v0/${baseId}/Meta_Campaigns`;
+
+            fetch(getcampaigndata, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+
+                    const dd = data.records;
+
+                    for (let i = 0; i < dd.length; i++) {
+
+                        const campaign_column_id = dd[i].id;
+                        const get_campaign_data = dd[i].fields;
+
+                        // Here Checked condition if campaign id is in table then do not create campaign for that ad account (airtable column SS https://prnt.sc/G9HFgf-EWJAS) 
+                        if (get_campaign_data['ad_campaign_id'] == undefined) {
+
+                            const campaignData = {
+                                name: get_campaign_data['name'],
+                                objective: get_campaign_data['objective'],
+                                status: get_campaign_data['status'],
+                                special_ad_categories: get_campaign_data['special_ad_categories'],
+                                access_token: get_campaign_data['access_token'],
+                            };
+
+                            // Sends data for create campaign 
+
+                            fetch('https://graph.facebook.com/v16.0/act_314975170404733/campaigns', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer keyVDvhyVSx5Ntbl3`
+                                    },
+                                    body: JSON.stringify(campaignData),
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+
+                                    // receives facebook api response (campaign ID) & stores in airtable Meta_Campaigns
+                                    const created_campaign_id = data.id;
+
+                                    const requestBody = {
+                                        fields: {
+                                            "ad_campaign_id": created_campaign_id
+                                        }
+                                    };
+
+                                    const campaign_id = `https://api.airtable.com/v0/appmM1mMqcDvugXhY/Meta_Campaigns/${campaign_column_id}`;
+
+                                    fetch(campaign_id, {
+                                            method: 'PATCH',
+                                            headers: {
+                                                'Content-Type': 'application/json',
+                                                'Authorization': `Bearer keyVDvhyVSx5Ntbl3`
+                                            },
+                                            body: JSON.stringify(requestBody)
+                                        })
+                                        .then(response => response.json())
+                                        .then(updateRecord => {
+                                            // console.log('Campaign ID inserted:', updateRecord);
+                                        })
+                                        .catch(error => {
+                                            // console.error('Error inserting record:', error);
+                                        });
+
+
+                                })
+                                .catch(error => {
+                                    // console.error('Error creating campaign:', error);
+                                });
+                        }
+                    }
+
+                })
+                .catch(error => {
+                    // console.error(error);
+                });
+
+                
+        }
+
+
+
+
+
+   //  Adesets Creation 
+   function create_Adesets() {
+
+        const apiKey = 'keyVDvhyVSx5Ntbl3';
+        const baseId = 'appmM1mMqcDvugXhY';
+
+        // Get table data for adsets creation 
+        const getadsetsdata = `https://api.airtable.com/v0/${baseId}/Meta_AdSets`;
+
+        fetch(getadsetsdata, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+
+                const adrecord = data.records;
+
+                for (let i = 0; i < adrecord.length; i++) {
+
+                    const adsets_column_id = adrecord[i].id;
+                    const get_adsets_data = adrecord[i].fields;
+                    
+                    const getad_account_number = get_adsets_data['ad_account_id'];
+                    console.log("Adsetsssnumber", get_adsets_data);
+                    const get_target = get_adsets_data['targeting'];
+                    let output = get_target.replace(/\\|\\n|\n/g, "");
+                    console.log("get_target", output);
+                    // Here Checked condition if Adesets id is in table then do not create Adesets for that ad account (airtable column SS https://prnt.sc/G9HFgf-EWJAS) 
+                    // if (get_campaign_data['ad_campaign_id'] == undefined) {
+
+                        const adsetsData = {
+                            name: get_adsets_data['name'],
+                            bid_amount: get_adsets_data['bid_amount'],
+                            status: get_adsets_data['status'],
+                            billing_event: get_adsets_data['billing_event'],
+                            access_token: get_adsets_data['access_token'],
+                            campaign_id: get_adsets_data['campaign_id'],
+                            end_time: get_adsets_data['end_time'],
+                            lifetime_budget: get_adsets_data['lifetime_budget'],
+                            optimization_goal: get_adsets_data['optimization_goal'],
+                            targeting: output
+                        };
+
+                        // Sends data for create adsets 
+
+                        fetch('https://graph.facebook.com/v17.0/act_712326673304050/adsets', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer keyVDvhyVSx5Ntbl3`
+                                },
+                                body: JSON.stringify(adsetsData),
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+
+                                // receives facebook api response (campaign ID) & stores in airtable Meta_Campaigns
+                                const created_adset_id = data.id;
+
+                                const requestBody = {
+                                    fields: {
+                                        "adsets_id": created_adset_id
+                                    }
+                                };
+
+                                const adset_id = `https://api.airtable.com/v0/appmM1mMqcDvugXhY/Meta_AdSets/${adsets_column_id}`;
+
+                                fetch(adset_id, {
+                                        method: 'PATCH',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'Authorization': `Bearer keyVDvhyVSx5Ntbl3`
+                                        },
+                                        body: JSON.stringify(requestBody)
+                                    })
+                                    .then(response => response.json())
+                                    .then(updateRecord => {
+                                        // console.log('Campaign ID inserted:', updateRecord);
+                                    })
+                                    .catch(error => {
+                                        // console.error('Error inserting record:', error);
+                                    });
+
+
+                            })
+                            .catch(error => {
+                                // console.error('Error creating campaign:', error);
+                            });
+                    // }
+                }
+
+            })
+            .catch(error => {
+                // console.error(error);
+            });
+
+}
+
+
+
+
+
+
+function getPagedata(id, email, name, accounts) {
+
+// getting fb data
+const accessToken = $insertdata['access_token'];
+const pageUrl = `https://graph.facebook.com/v16.0/me/accounts?access_token=${accessToken}&fields=id,name`;
+
+fetch(pageUrl)
+    .then(response => response.json())
+    .then(data => {
+        const pages = data.data;
+        if (pages.length > 0) {
+            const pageIds = pages.map(page => page.id);
+            const pageNames = pages.map(page => page.name);
+            var count = 0;
+            for (let i = 0; i < pageIds.length; i++) {
+
+                // check fb->page->id == Airtable Meta_Pages->page_id
+
+                const apiKey = 'keyVDvhyVSx5Ntbl3';
+                const baseId = 'appmM1mMqcDvugXhY';
+                const tableName = 'Meta_Pages';
+                const columnName = 'page_id';
+                const cutId = pageIds[i];
+
+                const updateUrl = `https://api.airtable.com/v0/${baseId}/${tableName}?filterByFormula=${encodeURIComponent(`{${columnName}}="${cutId}"`)}`;
+
+                // Get table data for updation and insertion
+                fetch(updateUrl, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
+                        },
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        const existingRecords = data.records;
+
+                        if (existingRecords.length > 0) {
+                            // if data is exist then Update the record in airtable Meta_Pages table
+
+                            console.log("true");
+                            const updateData = {
+                                fields: {
+                                    'meta_email': email,
+                                    'name': name,
+                                    'fb_id': id,
+                                    'page_id': cutId,
+                                    'Page_Names': pageNames[i],
+                                    'access_token': $insertdata['access_token'],
+                                }
+                            };
+
+                            const updateUrl = `https://api.airtable.com/v0/${baseId}/Meta_Pages/${existingRecord.id}`;
+
+                            fetch(updateUrl, {
+                                    method: 'PATCH',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${apiKey}`
+                                    },
+                                    body: JSON.stringify(updateData)
+                                })
+                                .then(response => response.json())
+                                .then(updatedRecord => {
+                                    console.log('Record updated:', updatedRecord);
+                                })
+                                .catch(error => {
+                                    console.error('Error updating record:', error);
+                                });
+
+                        } else {
+                            // else insert record in airtable Meta_Pages table
+                            console.log("false");
+                            const airtableUrl = `https://api.airtable.com/v0/${baseId}/Meta_Pages`;
+
+                            const requestBody = {
+                                records: [{
+                                    fields: {
+                                        'meta_email': email,
+                                        'name': name,
+                                        'fb_id': id,
+                                        'page_id': cutId,
+                                        'Page_Names': pageNames[i],
+                                        'access_token': $insertdata['access_token'],
+                                    }
+                                }]
+                            };
+
+                            fetch(airtableUrl, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${apiKey}`
+                                    },
+                                    body: JSON.stringify(requestBody)
+                                })
+                                .then(response => response.json())
+                                .then(insertedRecord => {
+                                    console.log('Record inserted:', insertedRecord);
+                                })
+                                .catch(error => {
+                                    console.error('Error inserting record:', error);
+                                });
+                        }
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    });
+            }
+        } else {
+            alert("pageUrl not found")
+        }
+
+    });
+}
+
+
+
+
 </script>
 
 
