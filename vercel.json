@@ -1,0 +1,9 @@
+{
+    "builds": [
+      { "src": "create_campaign.php", "use": "@vercel/php" }
+    ],
+    "routes": [
+      { "src": "/create_campaign.php", "dest": "/create_campaign.php" }
+    ]
+  }
+  

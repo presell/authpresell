@@ -1,6 +1,4 @@
 <?php
-
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Retrieve the request data
     $data = json_decode(file_get_contents('php://input'), true);
@@ -53,3 +51,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     echo json_encode($response);
 }
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+   
+
+</body>
+</html>
