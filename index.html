@@ -66,7 +66,6 @@
     </style>
 </head>
 <body>
-    <h1>Sample Vercel Testing</h1>
     <script>
 
         // FB SDK code
@@ -169,13 +168,11 @@
             });
         }
 
-
-
         
 
         // After Login Get ad Account ID and user data in Meta_Ad_Accounts airtable table 
-function saveFacebookLogindata(id, email, name, adaccounts)
-{
+        function saveFacebookLogindata(id, email, name, adaccounts)
+        {
             var dd = adaccounts.data;
            
             // Save ad account IDs, page IDs, and page names to Airtable using fetch API
@@ -271,7 +268,7 @@ function saveFacebookLogindata(id, email, name, adaccounts)
                 .catch(error => {
                     // console.error(error);
                 });
-}
+            }
 
 
       //  Campaign Creation 
@@ -471,7 +468,7 @@ function saveFacebookLogindata(id, email, name, adaccounts)
                 // console.error(error);
             });
 
-}
+      }
 
 
 
